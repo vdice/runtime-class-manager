@@ -1,0 +1,133 @@
+name: Helm Install Smoketest
+
+on:
+  workflow_call:
+
+env:
+  SPIN_OPERATOR_VERSION: 0.3.0
+
+
+jobs:
+  helm-install-smoke-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install helm
+        uses: Azure/setup-helm@v4
+        with:
+          version: v3.15.4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build RCM
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            runtime-class-manager:latest
+
+      - name: Build node installer
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./images/installer/Dockerfile
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            node-installer:latest
+
+      - name: Build shim downloader
+        uses: docker/build-push-action@v6
+        with:
+          context: ./images/downloader
+          file: ./images/downloader/Dockerfile
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            shim-downloader:latest
+
+      - name: create kind cluster
+        uses: helm/kind-action@v1
+
+      - name: import images into kind cluster
+        run: |
+          kind load docker-image runtime-class-manager:latest
+          kind load docker-image node-installer:latest
+          kind load docker-image shim-downloader:latest
+
+      - name: install cert-manager
+        run: kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.5/cert-manager.yaml
+
+      - name: install runtime-class-manager crds
+        run: make install
+
+      - name: helm install runtime-class-manager
+        run: |
+          helm install rcm \
+            --namespace rcm \
+            --create-namespace \
+            --debug \
+            --set image.repository=runtime-class-manager \
+            --set rcm.nodeInstallerImage.repository=node-installer \
+            --set rcm.shimDownloaderImage.repository=node-installer \
+            deploy/helm
+
+      - name: debug
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl get pods -n rcm
+          kubectl logs -n rcm $(kubectl get pods -n rcm | grep spin-operator-controller-manager | awk '{print $1}') || true
+          kubectl describe -n rcm pod $(kubectl get pods -n rcm | grep spin-operator-controller-manager | awk '{print $1}') || true
+          kubectl logs -n rcm $(kubectl get pods -n rcm | grep wait-for-webhook-svc | awk '{print $1}') || true
+          kubectl describe -n rcm pod $(kubectl get pods -n rcm | grep wait-for-webhook-svc | awk '{print $1}') || true
+
+# TODO: install spin-operator crds, chart and executor
+
+      - name: install spin-operator crds
+        run: kubectl apply -f https://github.com/spinkube/spin-operator/releases/download/v${{ env.SPIN_OPERATOR_VERSION }}/spin-operator.crds.yaml
+
+      - name: install spin-operator executor
+        run: kubectl apply -f https://github.com/spinkube/spin-operator/releases/download/v${{ env.SPIN_OPERATOR_VERSION }}/spin-operator.shim-executor.yaml
+
+      - name: helm install spin-operator
+        run: |
+          helm install spin-operator \
+            --namespace spin-operator \
+            --create-namespace \
+            --version ${{ env.SPIN_OPERATOR_VERSION }} \
+            --wait \
+            oci://ghcr.io/spinkube/charts/spin-operator
+
+      - name: debug
+        if: failure()
+        run: |
+          kubectl get pods -A
+          kubectl get pods -n spin-operator
+          kubectl get certificate -n spin-operator
+          kubectl logs -n spin-operator $(kubectl get pods -n spin-operator | grep spin-operator-controller-manager | awk '{print $1}') || true
+          kubectl describe -n spin-operator pod $(kubectl get pods -n spin-operator | grep spin-operator-controller-manager | awk '{print $1}') || true
+          kubectl logs -n spin-operator $(kubectl get pods -n spin-operator | grep wait-for-webhook-svc | awk '{print $1}') || true
+          kubectl describe -n spin-operator pod $(kubectl get pods -n spin-operator | grep wait-for-webhook-svc | awk '{print $1}') || true
+
+      - name: run spin app
+        run: |
+          kubectl apply -f config/samples/simple.yaml
+          kubectl rollout status deployment simple-spinapp --timeout 90s
+          kubectl get pods -A
+          kubectl port-forward svc/simple-spinapp 8083:80 &
+          timeout 15s bash -c 'until curl -f -vvv http://localhost:8083/hello; do sleep 2; done'
+
+      - name: Verify curl
+        run: curl localhost:8083/hello
