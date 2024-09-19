@@ -16,216 +16,154 @@
 
 package controller
 
-// import (
-// 	"context"
-// 	"fmt"
-// 	"math"
-// 	"os"
-// 	"strings"
+import (
+	"context"
+	"fmt"
+	"strings"
 
-// 	kwasmv1 "github.com/spinkube/runtime-class-manager/api/v1alpha1"
-// 	"github.com/rs/zerolog/log"
-// 	batchv1 "k8s.io/api/batch/v1"
-// 	corev1 "k8s.io/api/core/v1"
-// 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-// 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-// 	"k8s.io/apimachinery/pkg/runtime"
-// 	"k8s.io/apimachinery/pkg/types"
-// 	ctrl "sigs.k8s.io/controller-runtime"
-// 	"sigs.k8s.io/controller-runtime/pkg/client"
-// )
+	"github.com/rs/zerolog/log"
+	rcmv1 "github.com/spinkube/runtime-class-manager/api/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+)
 
-// // NodeReconciler reconciles a Node object
-// type NodeReconciler struct {
-// 	client.Client
-// 	Scheme *runtime.Scheme
-// }
+// NodeReconciler reconciles a Node object
+type NodeReconciler struct {
+	client.Client
+	Scheme *runtime.Scheme
+}
 
-// const ControllerPrefix = "kwasm.sh/"
+const ControllerPrefix = "kwasm.sh/"
 
-// //+kubebuilder:rbac:groups=runtime.kwasm.sh,resources=nodes,verbs=get;list;watch;create;update;patch;delete
-// //+kubebuilder:rbac:groups=runtime.kwasm.sh,resources=nodes/status,verbs=get;update;patch
-// //+kubebuilder:rbac:groups=runtime.kwasm.sh,resources=nodes/finalizers,verbs=update
+// TODO: remove create;delete?
+//+kubebuilder:rbac:groups=runtime.kwasm.sh,resources=nodes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=runtime.kwasm.sh,resources=nodes/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=runtime.kwasm.sh,resources=nodes/finalizers,verbs=update
 
-// // Reconcile is part of the main kubernetes reconciliation loop which aims to
-// // move the current state of the cluster closer to the desired state.
-// // TODO(user): Modify the Reconcile function to compare the state specified by
-// // the Node object against the actual cluster state, and then
-// // perform operations to make the cluster state reflect the state specified by
-// // the user.
-// //
-// // For more details, check Reconcile and its Result here:
-// // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
-// func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-// 	log := log.With().Str("node", req.Name).Logger()
-// 	node := &corev1.Node{}
+// Reconcile is part of the main kubernetes reconciliation loop which aims to
+// move the current state of the cluster closer to the desired state.
+// TODO(user): Modify the Reconcile function to compare the state specified by
+// the Node object against the actual cluster state, and then
+// perform operations to make the cluster state reflect the state specified by
+// the user.
+//
+// For more details, check Reconcile and its Result here:
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
+func (r *NodeReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := log.With().Str("node", req.Name).Logger()
+	node := &corev1.Node{}
 
-// 	log.Info().Msgf("%s> Reconciliation called", node.Name)
+	log.Info().Msgf("%s> Reconciliation called", node.Name)
 
-// 	if err := r.Get(ctx, req.NamespacedName, node); err != nil {
-// 		if apierrors.IsNotFound(err) {
-// 			// we'll ignore not-found errors, since they can't be fixed by an immediate
-// 			// requeue (we'll need to wait for a new notification), and we can get them
-// 			// on deleted requests.
-// 			return ctrl.Result{}, nil
-// 		}
-// 		return ctrl.Result{}, fmt.Errorf("failed to get node: %w", err)
-// 	}
+	if err := r.Get(ctx, req.NamespacedName, node); err != nil {
+		if apierrors.IsNotFound(err) {
+			// we'll ignore not-found errors, since they can't be fixed by an immediate
+			// requeue (we'll need to wait for a new notification), and we can get them
+			// on deleted requests.
+			return ctrl.Result{}, nil
+		}
+		return ctrl.Result{}, fmt.Errorf("failed to get node: %w", err)
+	}
 
-// 	log.Info().Msgf("%s> Getting Shim Annotations...", node.Name)
+	log.Info().Msgf("%s> Getting Shim Labels...", node.Name)
 
-// 	// Get all Annotations that contain a Shim name
-// 	// This are annotations like
-// 	// * "kwasm.sh/<shimname>"
-// 	// * example: "kwasm.sh/shim-spin-v2" where is the name of the shim resource
-// 	var shimList []string
-// 	for i := range node.Annotations {
-// 		if strings.HasPrefix(i, ControllerPrefix) {
-// 			b := strings.SplitN(i, ControllerPrefix, 2)
-// 			shimList = append(shimList, b[1])
-// 		}
-// 		log.Debug().Msgf("Shim Annotations> %v", shimList)
-// 	}
+	// TODO: Not sure if this flow is still what we want.. or we at least need/should compare with Shim resources that exist on the cluster right?
 
-// 	if len(shimList) == 0 {
-// 		log.Info().Msgf("%s> No Shim Annotations found", node.Name)
-// 	}
+	// Get all Labels that contain a Shim name
+	// These are labels like
+	// * "<shimname>=true"
+	// * example: "spin=true", defined under the nodeSelector section of a Shim spec
+	var shimList []string
+	for i := range node.Labels {
+		if strings.HasPrefix(i, ControllerPrefix) {
+			b := strings.SplitN(i, ControllerPrefix, 2)
+			shimList = append(shimList, b[1])
+		}
+		log.Debug().Msgf("Shim Labels> %v", shimList)
+	}
 
-// 	// Check if Shim Resources with name exists
-// 	for _, shimName := range shimList {
-// 		_, err := r.findShim(ctx, shimName)
-// 		if err != nil {
-// 			log.Err(err).Msgf("No Shim resource with name %s existing.", shimName)
-// 		} else {
-// 			log.Info().Msgf("Shim resource with name %s existing.", shimName)
-// 		}
-// 	}
+	if len(shimList) == 0 {
+		log.Info().Msgf("%s> No Shim Labels found", node.Name)
+	}
 
-// 	// Check if node has provisioned labels for every shim
-// 	// * "kwasm.sh/<shimname>" = "provisioned"
-// 	// * example: "kwasm.sh/shim-spin-v2" = "provisioned" means node has "shim-spin-v2" installed
-// 	log.Info().Msgf("%s> Check if Shim provisioned...", node.Name)
+	// Check if Shim Resources with name exists
+	for _, shimName := range shimList {
+		_, err := r.findShim(ctx, shimName)
+		if err != nil {
+			log.Err(err).Msgf("No Shim resource with name %s existing.", shimName)
+		} else {
+			log.Info().Msgf("Shim resource with name %s existing.", shimName)
+		}
+	}
 
-// 	for _, shimName := range shimList {
-// 		provisioned := false
-// 		for labelName := range node.Labels {
-// 			if strings.HasPrefix(labelName, ControllerPrefix) {
-// 				log.Debug().Msgf("Label: %s", labelName)
+	// Check if node has provisioned labels for every shim
+	// * "<shimname>" = "provisioned"
+	// * example: "shim-spin-v2" = "provisioned" means node has "shim-spin-v2" installed
+	log.Info().Msgf("%s> Check if Shim provisioned...", node.Name)
 
-// 				// Node has label, so it is provisioned
-// 				if labelName == (ControllerPrefix + shimName) {
-// 					provisioned = true
-// 					log.Info().Msgf("Shim %s provisioned.", shimName)
-// 				}
-// 			}
-// 		}
+	for _, shimName := range shimList {
+		provisioned := false
+		for labelName := range node.Labels {
+			if strings.HasPrefix(labelName, ControllerPrefix) {
+				log.Debug().Msgf("Label: %s", labelName)
 
-// 		// Node does not have label, so we need to start provisioning job
-// 		if !provisioned {
-// 			log.Info().Msgf("Shim %s not provisioned, start provisioning...", shimName)
-// 			// err := r.reconcileDeployment(ctx, node, req, shimName)
-// 			// if err != nil {
-// 			// 	log.Error().Err(err).Msgf("Failed to reconcile deployment for shim %s", shimName)
-// 			// 	return ctrl.Result{}, err
-// 			// }
-// 		}
-// 	}
+				// Node has label, so it is provisioned
+				if labelName == (ControllerPrefix + shimName) {
+					provisioned = true
+					log.Info().Msgf("Shim %s provisioned.", shimName)
+				}
+			}
+		}
 
-// 	/*
-// 	   Step 1: Add or remove the label.
-// 	*/
+		// Node does not have label, so we need to start provisioning job
+		if !provisioned {
+			log.Info().Msgf("Shim %s not provisioned, start provisioning...", shimName)
+			err := r.reconcileDeployment(ctx, node, req, shimName)
+			if err != nil {
+				log.Error().Err(err).Msgf("Failed to reconcile deployment for shim %s", shimName)
+				return ctrl.Result{}, err
+			}
+		}
+	}
 
-// 	// labelShouldBePresent := node.Annotations[addKWasmNodeLabelAnnotation] == "true"
-// 	// labelIsPresent := node.Labels[nodeNameLabel] == node.Name
+	return ctrl.Result{}, nil
+}
 
-// 	// if labelShouldBePresent == labelIsPresent && !r.AutoProvision {
-// 	// 	// The desired state and actual state of the Node are the same.
-// 	// 	// No further action is required by the operator at this moment.
+// findShim finds a shim resource by name.
+func (r *NodeReconciler) findShim(ctx context.Context, shimName string) (*rcmv1.Shim, error) {
+	var shimResource rcmv1.Shim
+	err := r.Client.Get(ctx, types.NamespacedName{Name: shimName, Namespace: "default"}, &shimResource)
+	if err != nil {
+		return nil, err
+	}
+	return &shimResource, nil
+}
 
-// 	// 	return ctrl.Result{}, nil
-// 	// }
-// 	// if labelShouldBePresent || r.AutoProvision && !labelIsPresent {
-// 	// 	// If the label should be set but is not, set it.
-// 	// 	if node.Labels == nil {
-// 	// 		node.Labels = make(map[string]string)
-// 	// 	}
-// 	// 	node.Labels[nodeNameLabel] = node.Name
+// reconcileDeployment creates a Job if one does not exist and reconciles it if it does.
+func (r *NodeReconciler) reconcileDeployment(ctx context.Context, node *corev1.Node, req ctrl.Request, shimName string) error {
+	log := log.With().Str("node", node.Name).Str("shim", shimName).Logger()
+	log.Info().Msgf("Reconciling Provisioning...")
 
-// 	// 	log.Info().Msgf("Create Deployment Spec for %s", node.Name)
-// 	// 	// dep, err := r.deployJob(node, req)
-// 	// 	// if err != nil {
-// 	// 	// 	return ctrl.Result{}, err
-// 	// 	// }
+	// TODO: We should be reusing the job creation, etc from shim_controller.go here
+	// desiredJob, err := r.constructDeployJob(node, req, shimName)
+	// if err != nil {
+	// 	log.Error().Err(err).Msg("Failed to construct Job description")
+	// 	return err
+	// }
 
-// 	// 	log.Info().Msgf("Trying Shim %s to Node on %s", "shimname", node.Name)
-// 	// 	if err = r.Create(ctx, dep); err != nil {
-// 	// 		log.Err(err).Msg("Failed to create new Job " + req.Namespace + " Job.Name " + req.Name)
-// 	// 		return ctrl.Result{}, fmt.Errorf("failed to create new job: %w", err)
-// 	// 	}
-// 	// } else if !r.AutoProvision {
-// 	// 	// If the label should not be set but is, remove it.
-// 	// 	delete(node.Labels, nodeNameLabel)
-// 	// 	log.Info().Msg("Label removed. Removing Job.")
+	log.Debug().Msgf("Reconciling Deployment Job")
 
-// 	// 	err := r.Delete(ctx, &batchv1.Job{
-// 	// 		ObjectMeta: metav1.ObjectMeta{
-// 	// 			Name:      req.Name + "-provision-kwasm",
-// 	// 			Namespace: os.Getenv("CONTROLLER_NAMESPACE"),
-// 	// 		},
-// 	// 	}, client.PropagationPolicy(metav1.DeletePropagationBackground))
-// 	// 	if err != nil {
-// 	// 		log.Err(err).Msg("Failed to delete Job for " + req.Name)
-// 	// 	}
-// 	// }
+	if err = r.Create(ctx, desiredJob); err != nil {
+		log.Err(err).Msg("Failed to create new Job " + req.Namespace + " Job.Name " + req.Name)
+		return fmt.Errorf("failed to create new job: %w", err)
+	}
 
-// 	// if err := r.Update(ctx, node); err != nil {
-// 	// 	if apierrors.IsConflict(err) {
-// 	// 		// The Node has been updated since we read it.
-// 	// 		// Requeue the Pod to try to reconciliate again.
-// 	// 		return ctrl.Result{Requeue: true}, nil
-// 	// 	}
-// 	// 	if apierrors.IsNotFound(err) {
-// 	// 		// The Node has been deleted since we read it.
-// 	// 		// Requeue the Pod to try to reconciliate again.
-// 	// 		return ctrl.Result{Requeue: true}, nil
-// 	// 	}
-// 	// 	log.Error().Err(err).Msg("unable to update Node")
-// 	// 	return ctrl.Result{}, fmt.Errorf("failed to update Node: %w", err)
-// 	// }
-
-// 	return ctrl.Result{}, nil
-// }
-
-// // findShim finds a shim resource by name.
-// func (r *NodeReconciler) findShim(ctx context.Context, shimName string) (*kwasmv1.Shim, error) {
-// 	var shimResource kwasmv1.Shim
-// 	err := r.Client.Get(ctx, types.NamespacedName{Name: shimName, Namespace: "default"}, &shimResource)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return &shimResource, nil
-// }
-
-// // reconcileDeployment creates a Job if one does not exist and reconciles it if it does.
-// func (r *NodeReconciler) reconcileDeployment(ctx context.Context, node *corev1.Node, req ctrl.Request, shimName string) error {
-// 	log := log.With().Str("node", node.Name).Str("shim", shimName).Logger()
-// 	log.Info().Msgf("Reconciling Provisioning...")
-
-// 	desiredJob, err := r.constructDeployJob(node, req, shimName)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("Failed to construct Job description")
-// 		return err
-// 	}
-
-// 	log.Debug().Msgf("Reconciling Deployment Job")
-
-// 	if err = r.Create(ctx, desiredJob); err != nil {
-// 		log.Err(err).Msg("Failed to create new Job " + req.Namespace + " Job.Name " + req.Name)
-// 		return fmt.Errorf("failed to create new job: %w", err)
-// 	}
-
-// 	return nil
-// }
+	return nil
+}
 
 // func (r *NodeReconciler) constructDeployJob(node *corev1.Node, req ctrl.Request, shimName string) (*batchv1.Job, error) {
 // 	priv := true
@@ -288,7 +226,7 @@ package controller
 // 	return dep, nil
 // }
 
-// // SetupWithManager sets up the controller with the Manager.
-// func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
-// 	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Node{}).Complete(r)
-// }
+// SetupWithManager sets up the controller with the Manager.
+func (r *NodeReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewControllerManagedBy(mgr).For(&corev1.Node{}).Complete(r)
+}
