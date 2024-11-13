@@ -25,23 +25,21 @@ import (
 	"github.com/spinkube/runtime-class-manager/internal/preset"
 )
 
-var containerdConfigLocations = map[string]preset.Settings{
-	// Microk8s
-	"/var/snap/microk8s/current/args/containerd-template.toml": preset.MicroK8s,
-	// RKE2
-	"/var/lib/rancher/rke2/agent/etc/containerd/config.toml": preset.RKE2,
-	// K3s
-	"/var/lib/rancher/k3s/agent/etc/containerd/config.toml": preset.K3s,
-	// K0s
-	"/etc/k0s/containerd.toml": preset.K0s,
-	// default
-	"/etc/containerd/config.toml": preset.Default,
+// Ordered set of config path locations, leaving the default for last.
+// There may be cases where the default config *and* another distro-specific
+// config exist; in these cases we want to detect the distro-specific config first.
+var containerdConfigLocations = [5]preset.ContainerdConfig{
+	preset.ContainerdConfigMicroK8s,
+	preset.ContainerdConfigRKE2,
+	preset.ContainerdConfigK3S,
+	preset.ContainerdConfigK0S,
+	preset.ContainerdConfigDefault,
 }
 
 func DetectDistro(config Config, hostFs afero.Fs) (preset.Settings, error) {
 	if config.Runtime.ConfigPath != "" {
 		// containerd config path has been set explicitly
-		if distro, ok := containerdConfigLocations[config.Runtime.ConfigPath]; ok {
+		if distro, ok := preset.SettingsMap[config.Runtime.ConfigPath]; ok {
 			return distro, nil
 		}
 		slog.Warn("could not determine distro from containerd config, falling back to defaults", "config", config.Runtime.ConfigPath)
@@ -50,11 +48,11 @@ func DetectDistro(config Config, hostFs afero.Fs) (preset.Settings, error) {
 
 	var errs []error
 
-	for loc, distro := range containerdConfigLocations {
-		_, err := hostFs.Stat(loc)
+	for _, containerdConfig := range containerdConfigLocations {
+		_, err := hostFs.Stat(containerdConfig.DefaultPath)
 		if err == nil {
 			// config file found, return corresponding distro settings
-			return distro, nil
+			return preset.SettingsMap[containerdConfig.DefaultPath], nil
 		}
 		errs = append(errs, err)
 	}
