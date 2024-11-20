@@ -113,8 +113,8 @@ jobs:
             let fs = require('fs');
             let path = require('path');
 
-            # The chart version omits the leading 'v' to adhere to Helm's versioning requirements
-            let chartVersion = "${{ env.TAG_NAME }}".replace("v", "")
+            // The chart version omits the leading 'v' to adhere to Helm's versioning requirements
+            let chartVersion = "${{ env.TAG_NAME }}".replace("v", "");
 
             let files = [
               'runtime-class-manager-sbom-amd64.spdx',
@@ -135,7 +135,7 @@ jobs:
               'shim-downloader-sbom-arm64.spdx',
               'shim-downloader-sbom-arm64.spdx.cert',
               'shim-downloader-sbom-arm64.spdx.sig',
-              `runtime-class-manager-${chartVersion}.tgz`
+              `runtime-class-manager-${chartVersion}.tgz`,
             ]
             const {RELEASE_ID} = process.env
 
