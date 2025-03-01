@@ -1,4 +1,4 @@
-module github.com/spinkube/runtime-class-manager
+module github.com/spinframework/runtime-class-manager
 
 go 1.23.0
 
