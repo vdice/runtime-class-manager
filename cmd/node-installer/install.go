@@ -25,9 +25,9 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/spinkube/runtime-class-manager/internal/containerd"
-	"github.com/spinkube/runtime-class-manager/internal/preset"
-	"github.com/spinkube/runtime-class-manager/internal/shim"
+	"github.com/spinframework/runtime-class-manager/internal/containerd"
+	"github.com/spinframework/runtime-class-manager/internal/preset"
+	"github.com/spinframework/runtime-class-manager/internal/shim"
 )
 
 // installCmd represents the install command.

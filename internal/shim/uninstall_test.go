@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/spf13/afero"
-	tests "github.com/spinkube/runtime-class-manager/tests/node-installer"
+	tests "github.com/spinframework/runtime-class-manager/tests/node-installer"
 )
 
 func TestConfig_Uninstall(t *testing.T) {

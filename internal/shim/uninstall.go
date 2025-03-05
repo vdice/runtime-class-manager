@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/spinkube/runtime-class-manager/internal/state"
+	"github.com/spinframework/runtime-class-manager/internal/state"
 )
 
 func (c *Config) Uninstall(shimName string) (string, error) {

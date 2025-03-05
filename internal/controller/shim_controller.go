@@ -40,7 +40,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	rcmv1 "github.com/spinkube/runtime-class-manager/api/v1alpha1"
+	rcmv1 "github.com/spinframework/runtime-class-manager/api/v1alpha1"
 )
 
 const (
