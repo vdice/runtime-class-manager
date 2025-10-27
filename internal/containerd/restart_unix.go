@@ -20,6 +20,7 @@
 package containerd
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
@@ -150,7 +151,7 @@ func ListSystemdUnits() ([]byte, error) {
 }
 
 func nsenterCmd(cmd ...string) *exec.Cmd {
-	return exec.Command("nsenter",
+	return exec.CommandContext(context.Background(), "nsenter",
 		append([]string{fmt.Sprintf("-m/%s/proc/1/ns/mnt", os.Getenv("HOST_ROOT")), "--"}, cmd...)...) // #nosec G204
 }
 

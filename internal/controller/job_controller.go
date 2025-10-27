@@ -149,7 +149,7 @@ func (jr *JobReconciler) deleteNodeLabel(ctx context.Context, node *corev1.Node,
 
 func (jr *JobReconciler) getNode(ctx context.Context, nodeName string) (*corev1.Node, error) {
 	node := corev1.Node{}
-	if err := jr.Client.Get(ctx, types.NamespacedName{Name: nodeName}, &node); err != nil {
+	if err := jr.Get(ctx, types.NamespacedName{Name: nodeName}, &node); err != nil {
 		log.Err(err).Msg("Unable to fetch node")
 		return &corev1.Node{}, client.IgnoreNotFound(err)
 	}
