@@ -106,7 +106,7 @@ func (sr *ShimReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	// 1. Check if the shim resource exists
 	var shimResource rcmv1.Shim
-	if err := sr.Client.Get(ctx, req.NamespacedName, &shimResource); err != nil {
+	if err := sr.Get(ctx, req.NamespacedName, &shimResource); err != nil {
 		log.Err(err).Msg("Unable to fetch shimResource")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
@@ -214,7 +214,7 @@ func (sr *ShimReconciler) updateStatus(ctx context.Context, shim *rcmv1.Shim, no
 	}
 
 	// Re-fetch shim to avoid "object has been modified" errors
-	if err := sr.Client.Get(ctx, types.NamespacedName{Name: shim.Name, Namespace: shim.Namespace}, shim); err != nil {
+	if err := sr.Get(ctx, types.NamespacedName{Name: shim.Name, Namespace: shim.Namespace}, shim); err != nil {
 		log.Error().Msgf("Unable to re-fetch shim: %s", err)
 		return fmt.Errorf("failed to fetch shim: %w", err)
 	}
@@ -269,7 +269,7 @@ func (sr *ShimReconciler) recreateStrategyRollout(ctx context.Context, shim *rcm
 func (sr *ShimReconciler) deployJobOnNode(ctx context.Context, shim *rcmv1.Shim, node corev1.Node, jobType string) error {
 	log := log.Ctx(ctx)
 
-	if err := sr.Client.Get(ctx, types.NamespacedName{Name: node.Name}, &node); err != nil {
+	if err := sr.Get(ctx, types.NamespacedName{Name: node.Name}, &node); err != nil {
 		log.Error().Msgf("Unable to re-fetch node: %s", err)
 		return fmt.Errorf("failed to fetch node: %w", err)
 	}
@@ -311,7 +311,7 @@ func (sr *ShimReconciler) deployJobOnNode(ctx context.Context, shim *rcmv1.Shim,
 	}
 
 	// We rely on controller-runtime to rate limit us.
-	if err := sr.Client.Patch(ctx, job, patchMethod, patchOptions); err != nil {
+	if err := sr.Patch(ctx, job, patchMethod, patchOptions); err != nil {
 		log.Error().Msgf("Unable to reconcile Job: %s", err)
 		if err := sr.updateNodeLabels(ctx, &node, shim, "failed"); err != nil {
 			log.Error().Msgf("Unable to update node label %s: %s", shim.Name, err)
@@ -506,7 +506,7 @@ func (sr *ShimReconciler) handleDeployRuntimeClass(ctx context.Context, shim *rc
 	}
 
 	// Note that we reconcile even if the deployment is in a good state. We rely on controller-runtime to rate limit us.
-	if err := sr.Client.Patch(ctx, runtimeClass, patchMethod, patchOptions); err != nil {
+	if err := sr.Patch(ctx, runtimeClass, patchMethod, patchOptions); err != nil {
 		log.Error().Msgf("Unable to reconcile RuntimeClass %s", err)
 		return ctrl.Result{}, fmt.Errorf("failed to reconcile RuntimeClass: %w", err)
 	}
@@ -602,7 +602,7 @@ func (sr *ShimReconciler) runtimeClassExists(ctx context.Context, shim *rcmv1.Sh
 // getRuntimeClass finds a RuntimeClass.
 func (sr *ShimReconciler) getRuntimeClass(ctx context.Context, shim *rcmv1.Shim) (*nodev1.RuntimeClass, error) {
 	rc := nodev1.RuntimeClass{}
-	err := sr.Client.Get(ctx, types.NamespacedName{Name: shim.Spec.RuntimeClass.Name, Namespace: shim.Namespace}, &rc)
+	err := sr.Get(ctx, types.NamespacedName{Name: shim.Spec.RuntimeClass.Name, Namespace: shim.Namespace}, &rc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get runtimeClass: %w", err)
 	}
@@ -613,7 +613,7 @@ func (sr *ShimReconciler) getRuntimeClass(ctx context.Context, shim *rcmv1.Shim)
 func (sr *ShimReconciler) removeFinalizerFromShim(ctx context.Context, shim *rcmv1.Shim) error {
 	if controllerutil.ContainsFinalizer(shim, RCMOperatorFinalizer) {
 		controllerutil.RemoveFinalizer(shim, RCMOperatorFinalizer)
-		if err := sr.Client.Update(ctx, shim); err != nil {
+		if err := sr.Update(ctx, shim); err != nil {
 			return fmt.Errorf("failed to remove finalizer: %w", err)
 		}
 	}
@@ -624,7 +624,7 @@ func (sr *ShimReconciler) removeFinalizerFromShim(ctx context.Context, shim *rcm
 func (sr *ShimReconciler) ensureFinalizerForShim(ctx context.Context, shim *rcmv1.Shim, finalizer string) error {
 	if !controllerutil.ContainsFinalizer(shim, finalizer) {
 		controllerutil.AddFinalizer(shim, finalizer)
-		if err := sr.Client.Update(ctx, shim); err != nil {
+		if err := sr.Update(ctx, shim); err != nil {
 			return fmt.Errorf("failed to set finalizer: %w", err)
 		}
 	}
