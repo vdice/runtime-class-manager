@@ -61,8 +61,7 @@ jobs:
       - name: Sign SBOM file
         run: |
           cosign sign-blob --yes \
-            --output-certificate ${{ inputs.image-name }}-sbom-${{ matrix.arch }}.spdx.cert \
-            --output-signature ${{ inputs.image-name }}-sbom-${{ matrix.arch }}.spdx.sig \
+            --bundle ${{ inputs.image-name }}-sbom-${{ matrix.arch }}.spdx.bundle \
             ${{ inputs.image-name }}-sbom-${{ matrix.arch }}.spdx
 
       - name: Attach SBOM file in the container image
