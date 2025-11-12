@@ -90,14 +90,14 @@ jobs:
             core.setFailed(`Draft release not found`)
 
       - name: Download SBOM artifact
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@f093f21ca4cfa7c75ccbbc2be54da76a0c7e1f05 # v4.1.9
         with:
           pattern: "*-sbom-*"
           path: ./
           merge-multiple: true
 
       - name: Download helm chart artifact
-        uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4.1.9
+        uses: actions/download-artifact@f093f21ca4cfa7c75ccbbc2be54da76a0c7e1f05 # v4.1.9
         with:
           name: runtime-class-manager
           path: ./
