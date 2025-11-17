@@ -31,16 +31,16 @@ jobs:
               file: "./images/installer/Dockerfile"
             }
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
 
       - name: Build ${{ matrix.config.name }}
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
         with:
           context: ${{ matrix.config.context }}
           file: ${{ matrix.config.file }}
@@ -80,10 +80,10 @@ jobs:
             }
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
 
       - name: Install helm
-        uses: Azure/setup-helm@v4
+        uses: Azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
         with:
           version: v3.17.2
 
@@ -99,7 +99,7 @@ jobs:
       # Ref: https://github.com/orgs/community/discussions/25824
       - name: Create kind cluster
         if: matrix.config.type == 'kind'
-        uses: helm/kind-action@v1
+        uses: helm/kind-action@92086f6be054225fa813e0a4b13787fc9088faab # v1.13.0
         with:
           cluster_name: kind
           # Versions lower than v0.27.0 encounter https://github.com/kubernetes-sigs/kind/issues/3795
@@ -117,13 +117,13 @@ jobs:
 
       - name: Create microk8s cluster
         if: matrix.config.type == 'microk8s'
-        uses: balchua/microk8s-actions@v0.4.3
+        uses: balchua/microk8s-actions@13f73436011eb4925c22526f64fb3ecdd81289a9 # v0.4.3
         with:
           channel: ${{ env.MICROK8S_CHANNEL }}
 
       - name: Create k3d cluster
         if: matrix.config.type == 'k3d'
-        uses: AbsaOSS/k3d-action@v2
+        uses: AbsaOSS/k3d-action@4e8b3239042be1dc0aed6c5eb80c13b18200fc79 # v2.4.0
         with:
           cluster-name: k3s-default
           k3d-version: v5.8.3
