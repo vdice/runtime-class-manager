@@ -117,7 +117,7 @@ jobs:
 
       - name: Create microk8s cluster
         if: matrix.config.type == 'microk8s'
-        uses: balchua/microk8s-actions@v0.4.3
+        uses: balchua/microk8s-actions@13f73436011eb4925c22526f64fb3ecdd81289a9 # v0.4.3
         with:
           channel: ${{ env.MICROK8S_CHANNEL }}
 
