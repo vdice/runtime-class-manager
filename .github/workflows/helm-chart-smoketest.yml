@@ -3,6 +3,9 @@ name: Helm Chart Smoketest
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 env:
   K8S_VERSION: v1.32.3
   MICROK8S_CHANNEL: 1.32/stable

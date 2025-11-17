@@ -14,12 +14,13 @@ on:
 
 permissions:
   contents: read
-  # Write permissions for pull-requests are required for using the `comment-summary-in-pr` option, comment out if you aren't using this option
-  pull-requests: write
 
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
+    permissions:
+      # Write permissions for pull-requests are required for using the `comment-summary-in-pr` option, comment out if you aren't using this option
+      pull-requests: write
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1

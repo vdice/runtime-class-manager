@@ -12,7 +12,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 env:
   REGISTRY: ghcr.io
@@ -22,6 +21,8 @@ jobs:
   release:
     name: Release chart
     runs-on: ubuntu-22.04
+    permissions:
+      packages: write
 
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
