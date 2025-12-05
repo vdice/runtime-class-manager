@@ -1,6 +1,6 @@
 module github.com/spinframework/runtime-class-manager
 
-go 1.24.1
+go 1.25.5
 
 require (
 	github.com/mitchellh/go-ps v1.0.0
