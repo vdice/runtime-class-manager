@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/mitchellh/go-ps v1.0.0
-	github.com/onsi/ginkgo/v2 v2.27.4
+	github.com/onsi/ginkgo/v2 v2.27.5
 	github.com/onsi/gomega v1.39.0
 	github.com/prometheus/common v0.67.4
 	github.com/rs/zerolog v1.34.0
