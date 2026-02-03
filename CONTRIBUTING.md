@@ -61,3 +61,12 @@ To run the controller, you just need to run the following command against an emp
 ```console
 tilt up --stream
 ```
+
+## Pull Requests
+### Commit
+All commits in a PR must be GPG-signed and signed-off.
+A typical command for a commit with a GPG signature and developer sign-off is:
+```console
+git commit --signoff -S -m "<commit message>"
+```
+Please follow [the instructions for signing commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits) to set up your GPG key.
