@@ -19,6 +19,7 @@ rcm:
     tag: "latest"
   nodeInstallerJob:
     ttl: 0
+  leaderElectEnabled: false
 
 imagePullSecrets: []
 nameOverride: ""
