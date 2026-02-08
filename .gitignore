@@ -8,6 +8,7 @@
 bin
 testbin/*
 Dockerfile.cross
+tilt-settings.yaml
 
 # Test binary, build with `go test -c`
 *.test
