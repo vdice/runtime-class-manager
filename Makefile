@@ -238,10 +238,7 @@ kind: create-kind-cluster install
 HELM           ?= helm
 CHART_NAME     := runtime-class-manager
 CHART_REGISTRY ?= ghcr.io/spinframework/charts
-# We can update 0.0.0 to the most recent tag once we have a first git tag.
-# Note that the leading 'v' must be dropped per Helm's versioning requirements
-# e.g. $(shell git describe --tags --abbrev=0 | sed -rn 's/(v)?(.*)/\2/p')
-CHART_VERSION  ?= 0.0.0-$(VERSION)
+CHART_VERSION  ?= $(shell git describe --tags --abbrev=0 | sed -rn 's/(v)?(.*)/\2/p')-$(VERSION)
 APP_VERSION    ?= $(VERSION)
 STAGING_DIR    ?= _dist
 

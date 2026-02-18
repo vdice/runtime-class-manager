@@ -26,6 +26,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
 
       - name: Install helm
         uses: Azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4.3.1
@@ -39,9 +41,7 @@ jobs:
             echo "CHART_VERSION=$(echo -n ${{ github.ref_name }} | sed -rn 's/(v)?(.*)/\2/p')" >> $GITHUB_ENV
             echo "APP_VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
           else
-            # NOTE: We can replace 0.0.0 with e.g. $(git describe --tags $(git rev-list --tags --max-count=1)) once we have a first tag
-            # However, we'll also need to update the checkout step with 'fetch-depth: 0' if we list tags
-            echo "CHART_VERSION=0.0.0-$(date +%Y%m%d-%H%M%S)-g$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+            echo "CHART_VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))-$(date +%Y%m%d-%H%M%S)-g$(git rev-parse --short HEAD)" >> $GITHUB_ENV
             # Setting to 'latest' to match tag used in container-image.yml
             echo "APP_VERSION=latest" >> $GITHUB_ENV
           fi
