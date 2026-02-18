@@ -32,12 +32,47 @@ type ShimSpec struct {
 }
 
 type FetchStrategy struct {
-	Type     string       `json:"type"`
-	AnonHTTP AnonHTTPSpec `json:"anonHttp"`
+	// Type is the fetch strategy type.
+	//
+	// Deprecated: this field is ignored by the controller and exists only
+	// for backward compatibility with existing manifests that specify it.
+	//
+	// +optional
+	Type string `json:"type,omitempty"`
+
+	// AnonHTTP fetches a binary from a public HTTP(S) URL.
+	// For backward compatibility with single-architecture deployments.
+	// When Platforms is also specified, Platforms takes precedence.
+	// +optional
+	AnonHTTP *AnonHTTPSpec `json:"anonHttp,omitempty"`
+
+	// Platforms lists per-OS/architecture artifact sources.
+	// The controller selects the matching entry for each target node.
+	// When specified, this takes precedence over AnonHTTP.
+	// +optional
+	Platforms []PlatformArtifact `json:"platforms,omitempty"`
 }
 
+// AnonHTTPSpec defines a simple anonymous HTTP fetch (single URL, single architecture).
 type AnonHTTPSpec struct {
+	// Location is the direct URL to the artifact archive.
 	Location string `json:"location"`
+}
+
+// PlatformArtifact maps a specific OS/Arch pair to an artifact URL.
+type PlatformArtifact struct {
+	// OS is the operating system. Currently only "Linux" is supported.
+	// +kubebuilder:validation:Enum=linux
+	OS string `json:"os"`
+	// Arch is the CPU architecture.
+	// Accepts Go-style ("amd64", "arm64") or uname-style ("x86_64", "aarch64").
+	// +kubebuilder:validation:Enum=amd64;arm64;x86_64;aarch64
+	Arch string `json:"arch"`
+	// Location is the URL to the artifact archive for this platform. Must be publicly accessible.
+	Location string `json:"location"`
+	// SHA256 is the optional hex-encoded SHA-256 digest for verification.
+	// +optional
+	SHA256 string `json:"sha256,omitempty"`
 }
 
 type RuntimeClassSpec struct {

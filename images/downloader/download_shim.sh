@@ -36,4 +36,15 @@ log "sha256sum: $(sha256sum containerd-shim-${SHIM_NAME})" "INFO"
 tar -xzf "containerd-shim-${SHIM_NAME}" -C /assets
 log "download successful:" "INFO"
 
+# Verify SHA-256 if provided
+if [ -n "${SHIM_SHA256:-}" ]; then
+    log "verifying SHA-256 digest..." "INFO"
+    if echo "${SHIM_SHA256}  containerd-shim-${SHIM_NAME}" | sha256sum -c -; then
+        log "SHA-256 verification passed" "INFO"
+    else
+        log "SHA-256 verification FAILED: expected ${SHIM_SHA256} for containerd-shim-${SHIM_NAME}" "ERROR"
+        exit 1
+    fi
+fi
+
 ls -lah /assets

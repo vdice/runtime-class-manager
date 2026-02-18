@@ -24,12 +24,12 @@ helm upgrade --install rcm \
 
 With runtime-class-manager running, you're ready to create one or more Wasm Shims. See the samples in the [config/samples directory](https://github.com/spinframework/runtime-class-manager/tree/v{{ CHART_VERSION }}/config/samples/).
 
-> Note: Ensure that the `location` for the specified shim binary points to the correct architecture for your Node(s)
+> Note: The sample Shim manifests include `platforms` entries for both `x86_64` and `aarch64`. The controller automatically selects the correct artifact for each node's architecture.
 
-For example, here we install the Spin shim on nodes with x86_64 architecture:
+For example, here we install the Spin shim:
 
 ```shell
-ARCH=x86_64 kubectl apply -f https://raw.githubusercontent.com/spinframework/runtime-class-manager/refs/heads/v{{ CHART_VERSION }}/config/samples/sample_shim_spin_$ARCH.yaml
+kubectl apply -f https://raw.githubusercontent.com/spinframework/runtime-class-manager/refs/heads/v{{ CHART_VERSION }}/config/samples/sample_shim_spin.yaml
 ```
 
 Now when you annotate one or more nodes with a label corresponding to the `nodeSelector` declared in the Shim, runtime-class-manager will install the shim as well as create the corresponding Runtimeclass:

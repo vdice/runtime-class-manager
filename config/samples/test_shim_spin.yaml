@@ -13,9 +13,20 @@ spec:
     spin: "true"
 
   fetchStrategy:
+    # Deprecated field added to test backwards compatibility. The controller should ignore the `type` field.
     type: anonymousHttp
+    # platforms gets precedence over anonHttp, but multiple strategy types should be allowed.
     anonHttp:
       location: "https://github.com/spinframework/containerd-shim-spin/releases/download/v0.22.0/containerd-shim-spin-v2-linux-aarch64.tar.gz"
+    platforms:
+      - os: linux
+        arch: aarch64
+        location: "https://github.com/spinframework/containerd-shim-spin/releases/download/v0.22.0/containerd-shim-spin-v2-linux-aarch64.tar.gz"
+        sha256: "5fde86c310b8b8ef4c1b19a04eece203f4c308f6fb42bfae3babd99d4c04006b"
+      - os: linux
+        arch: x86_64
+        location: "https://github.com/spinframework/containerd-shim-spin/releases/download/v0.22.0/containerd-shim-spin-v2-linux-x86_64.tar.gz"
+        sha256: "adeb94339c673f09cffe8c45c04f9b18d410f9375d1570b6d1939758b507d257"
 
   # Each runtime can provide a set of containerd runtime options to be set in the containerd
   # configuration file.

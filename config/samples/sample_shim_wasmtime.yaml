@@ -13,9 +13,13 @@ spec:
     wasmtime: "true"
 
   fetchStrategy:
-    type: anonymousHttp
-    anonHttp:
-      location: "https://github.com/containerd/runwasi/releases/download/containerd-shim-wasmtime%2Fv0.6.0/containerd-shim-wasmtime-x86_64-linux-musl.tar.gz"
+    platforms:
+      - os: linux
+        arch: aarch64
+        location: "https://github.com/containerd/runwasi/releases/download/containerd-shim-wasmtime%2Fv0.6.0/containerd-shim-wasmtime-aarch64-linux-musl.tar.gz"
+      - os: linux
+        arch: x86_64
+        location: "https://github.com/containerd/runwasi/releases/download/containerd-shim-wasmtime%2Fv0.6.0/containerd-shim-wasmtime-x86_64-linux-musl.tar.gz"
 
   runtimeClass:
     name: wasmtime-v1
