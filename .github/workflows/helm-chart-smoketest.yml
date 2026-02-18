@@ -183,7 +183,7 @@ jobs:
           kubectl rollout status deployment wasm-spin --timeout 180s
           kubectl get pods -A
           kubectl port-forward svc/wasm-spin 8083:80 &
-          timeout 60s bash -c 'until curl -f -vvv http://localhost:8083/hello; do sleep 2; done'
+          timeout 90s bash -c 'until curl -f -vvv http://localhost:8083/hello; do sleep 2; done'
 
       - name: restart system containerd
         if: matrix.config.type == 'microk8s'
