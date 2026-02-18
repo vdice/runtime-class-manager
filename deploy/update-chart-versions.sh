@@ -18,5 +18,8 @@ yq -i '.image.tag = env(APP_VERSION)' "${STAGING_DIR}/${CHART_NAME}-${CHART_VERS
 yq -i '.rcm.shimDownloaderImage.tag = env(APP_VERSION)' "${STAGING_DIR}/${CHART_NAME}-${CHART_VERSION}/values.yaml"
 yq -i '.rcm.nodeInstallerImage.tag = env(APP_VERSION)' "${STAGING_DIR}/${CHART_NAME}-${CHART_VERSION}/values.yaml"
 
+## Update README.md with CHART_VERSION
+sed -i.bak -e "s%{{ CHART_VERSION }}%${CHART_VERSION}%g" "${STAGING_DIR}/${CHART_NAME}-${CHART_VERSION}/README.md"
+
 # Cleanup
 find "${STAGING_DIR}/${CHART_NAME}-${CHART_VERSION}" -type f -name '*.bak' -print0 | xargs -0 rm -- || true
