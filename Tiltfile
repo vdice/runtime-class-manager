@@ -44,7 +44,7 @@ k8s_yaml(updated_install)
 # binary is rebuilt and the hot swat wrapper takes care of the rest.
 local_resource(
     'manager',
-    "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/manager ./",
+    "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/manager ./cmd/rcm/main.go",
     deps = [
         "main.go",
         "go.mod",
