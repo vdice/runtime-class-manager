@@ -10,8 +10,8 @@ For full, detailed configuration options, see the [Shim CRD](../config/crd/bases
 
 * `spec.nodeSelector`: The label key and value applied to Nodes where this particular shim should be installed
 * `spec.fetchStrategy`: The strategy for fetching the shim binary
-  * `spec.fetchStrategy.type`: `anonymousHttp` is the only option currently supported.
-  * `spec.fetchStrategy.anonHttp.location`: The URL where the shim binary can be downloaded
+  * `spec.fetchStrategy.anonHttp`: Fetch the shim binary from a specified URL. This is the legacy option.
+  * `spec.fetchStrategy.platforms`: A list of per-OS/architecture artifact entries. Each entry specifies `os`, `arch`, `location`, and an optional `sha256` digest. The controller selects the matching entry for each target node. This is the current recommended strategy.
 * `spec.containerdRuntimeOptions`: Options specific to the shim that should be added to the containerd configuration
 
 ### Operation

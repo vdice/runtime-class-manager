@@ -24,6 +24,7 @@ import (
 	"math"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -65,6 +66,14 @@ type opConfig struct {
 	privileged    bool
 	initContainer []corev1.Container
 	args          []string
+}
+
+// resolvedArtifact holds the resolved download URL and optional checksum
+// for a specific node's shim artifact. This is the common return type from
+// resolveArtifactForNode, regardless of whether the source was anonHttp or platforms.
+type resolvedArtifact struct {
+	location string
+	sha256   string
 }
 
 //+kubebuilder:rbac:groups=runtime.spinkube.dev,resources=shims,verbs=get;list;watch;create;update;patch;delete
@@ -278,6 +287,12 @@ func (sr *ShimReconciler) deployJobOnNode(ctx context.Context, shim *rcmv1.Shim,
 
 	log.Info().Msgf("Deploying %s-Job for Shim %s on node: %s", jobType, shim.Name, node.Name)
 
+	// Resolve the platform-specific artifact for this node
+	artifact, err := resolveArtifactForNode(shim, &node)
+	if err != nil && jobType == INSTALL {
+		return fmt.Errorf("failed to resolve artifact for node %s: %w", node.Name, err)
+	}
+
 	var job *batchv1.Job
 
 	switch jobType {
@@ -287,7 +302,7 @@ func (sr *ShimReconciler) deployJobOnNode(ctx context.Context, shim *rcmv1.Shim,
 			log.Error().Msgf("Unable to update node label %s: %s", shim.Name, err)
 		}
 
-		job, err = sr.createJobManifest(shim, &node, INSTALL)
+		job, err = sr.createJobManifest(shim, &node, INSTALL, artifact)
 		if err != nil {
 			return err
 		}
@@ -297,7 +312,7 @@ func (sr *ShimReconciler) deployJobOnNode(ctx context.Context, shim *rcmv1.Shim,
 			log.Error().Msgf("Unable to update node label %s: %s", shim.Name, err)
 		}
 
-		job, err = sr.createJobManifest(shim, &node, UNINSTALL)
+		job, err = sr.createJobManifest(shim, &node, UNINSTALL, resolvedArtifact{})
 		if err != nil {
 			return err
 		}
@@ -334,25 +349,84 @@ func (sr *ShimReconciler) updateNodeLabels(ctx context.Context, node *corev1.Nod
 	return nil
 }
 
+// resolveArtifactForNode selects the matching platform artifact for a given node.
+// It first checks the Platforms list for OS/arch match, then falls back to AnonHTTP.
+func resolveArtifactForNode(shim *rcmv1.Shim, node *corev1.Node) (resolvedArtifact, error) {
+	nodeOS := node.Status.NodeInfo.OperatingSystem
+	nodeArch := node.Status.NodeInfo.Architecture
+
+	// 1. If platforms are specified, find a matching entry
+	if len(shim.Spec.FetchStrategy.Platforms) > 0 {
+		for _, p := range shim.Spec.FetchStrategy.Platforms {
+			if matchesPlatform(p, nodeOS, nodeArch) {
+				return resolvedArtifact{
+					location: p.Location,
+					sha256:   p.SHA256,
+				}, nil
+			}
+		}
+		return resolvedArtifact{}, fmt.Errorf("no platform artifact matches node %s (%s/%s)", node.Name, nodeOS, nodeArch)
+	}
+
+	// 2. Fallback to anonHttp (backward compatible single-URL mode)
+	if shim.Spec.FetchStrategy.AnonHTTP != nil {
+		return resolvedArtifact{
+			location: shim.Spec.FetchStrategy.AnonHTTP.Location,
+		}, nil
+	}
+
+	return resolvedArtifact{}, fmt.Errorf("no fetch source configured for shim %s", shim.Name)
+}
+
+// matchesPlatform checks if a PlatformArtifact matches a node's OS and architecture.
+// It accepts both Go-style (amd64, arm64) and uname-style (x86_64, aarch64) arch values.
+func matchesPlatform(p rcmv1.PlatformArtifact, nodeOS, nodeGoArch string) bool {
+	osMatch := strings.EqualFold(p.OS, nodeOS)
+	archMatch := strings.EqualFold(p.Arch, nodeGoArch) ||
+		strings.EqualFold(p.Arch, normalizeArch(nodeGoArch))
+	return osMatch && archMatch
+}
+
+// normalizeArch converts Go-style architecture names to uname-style.
+func normalizeArch(goArch string) string {
+	switch goArch {
+	case "amd64":
+		return "x86_64"
+	case "arm64":
+		return "aarch64"
+	case "arm":
+		return "armv7l"
+	default:
+		return goArch
+	}
+}
+
 // setOperationConfiguration sets operation specific configuration for the job manifest
-func (sr *ShimReconciler) setOperationConfiguration(shim *rcmv1.Shim, opConfig *opConfig) {
+func (sr *ShimReconciler) setOperationConfiguration(shim *rcmv1.Shim, opConfig *opConfig, artifact resolvedArtifact) {
 	if opConfig.operation == INSTALL {
+		envVars := []corev1.EnvVar{
+			{
+				Name:  "SHIM_NAME",
+				Value: shim.Name,
+			},
+			{
+				Name:  "SHIM_LOCATION",
+				Value: artifact.location,
+			},
+		}
+		if artifact.sha256 != "" {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "SHIM_SHA256",
+				Value: artifact.sha256,
+			})
+		}
 		opConfig.initContainer = []corev1.Container{{
 			Image: os.Getenv("SHIM_DOWNLOADER_IMAGE"),
 			Name:  "downloader",
 			SecurityContext: &corev1.SecurityContext{
 				Privileged: &opConfig.privileged,
 			},
-			Env: []corev1.EnvVar{
-				{
-					Name:  "SHIM_NAME",
-					Value: shim.Name,
-				},
-				{
-					Name:  "SHIM_LOCATION",
-					Value: shim.Spec.FetchStrategy.AnonHTTP.Location,
-				},
-			},
+			Env: envVars,
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "shim-download",
@@ -384,12 +458,12 @@ func (sr *ShimReconciler) setOperationConfiguration(shim *rcmv1.Shim, opConfig *
 // createJobManifest creates a Job manifest for a Shim.
 //
 //nolint:funlen // function is longer due to scaffolding an entire K8s Job manifest
-func (sr *ShimReconciler) createJobManifest(shim *rcmv1.Shim, node *corev1.Node, operation string) (*batchv1.Job, error) {
+func (sr *ShimReconciler) createJobManifest(shim *rcmv1.Shim, node *corev1.Node, operation string, artifact resolvedArtifact) (*batchv1.Job, error) {
 	opConfig := opConfig{
 		operation:  operation,
 		privileged: true,
 	}
-	sr.setOperationConfiguration(shim, &opConfig)
+	sr.setOperationConfiguration(shim, &opConfig, artifact)
 
 	name := node.Name + "-" + shim.Name + "-" + operation
 	nameMax := int(math.Min(float64(len(name)), K8sNameMaxLength))

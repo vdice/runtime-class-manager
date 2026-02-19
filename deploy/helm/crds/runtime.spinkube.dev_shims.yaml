@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.16.3
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: shims.runtime.spinkube.dev
 spec:
   group: runtime.spinkube.dev
@@ -59,17 +59,61 @@ spec:
               fetchStrategy:
                 properties:
                   anonHttp:
+                    description: |-
+                      AnonHTTP fetches a binary from a public HTTP(S) URL.
+                      For backward compatibility with single-architecture deployments.
+                      When Platforms is also specified, Platforms takes precedence.
                     properties:
                       location:
+                        description: Location is the direct URL to the artifact archive.
                         type: string
                     required:
                     - location
                     type: object
+                  platforms:
+                    description: |-
+                      Platforms lists per-OS/architecture artifact sources.
+                      The controller selects the matching entry for each target node.
+                      When specified, this takes precedence over AnonHTTP.
+                    items:
+                      description: PlatformArtifact maps a specific OS/Arch pair to
+                        an artifact URL.
+                      properties:
+                        arch:
+                          description: |-
+                            Arch is the CPU architecture.
+                            Accepts Go-style ("amd64", "arm64") or uname-style ("x86_64", "aarch64").
+                          enum:
+                          - amd64
+                          - arm64
+                          - x86_64
+                          - aarch64
+                          type: string
+                        location:
+                          description: Location is the URL to the artifact archive
+                            for this platform.
+                          type: string
+                        os:
+                          description: OS is the operating system.
+                          enum:
+                          - linux
+                          type: string
+                        sha256:
+                          description: SHA256 is the optional hex-encoded SHA-256
+                            digest for verification.
+                          type: string
+                      required:
+                      - arch
+                      - location
+                      - os
+                      type: object
+                    type: array
                   type:
+                    description: |-
+                      Type is the fetch strategy type.
+                      Deprecated: this field is ignored by the controller and exists only
+                      for backward compatibility with existing manifests that specify it.
                     type: string
-                required:
-                - anonHttp
-                - type
                 type: object
               nodeSelector:
                 additionalProperties:
