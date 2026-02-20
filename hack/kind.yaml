@@ -7,11 +7,4 @@ nodes:
     spin: true
 - role: worker
   labels:
-    wws: true
     spin: true
-- role: worker
-  labels:
-    slight: true
-- role: worker
-  labels:
-    lunatic: true

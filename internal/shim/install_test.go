@@ -54,9 +54,9 @@ func TestConfig_Install(t *testing.T) {
 				"/assets",
 				"/opt/rcm",
 			},
-			args{"containerd-shim-slight-v1"},
+			args{"containerd-shim-wasmtime-v1"},
 			wants{
-				"/opt/rcm/bin/containerd-shim-slight-v1",
+				"/opt/rcm/bin/containerd-shim-wasmtime-v1",
 				true,
 			},
 			false,
@@ -84,9 +84,9 @@ func TestConfig_Install(t *testing.T) {
 				"/assets",
 				"/opt/rcm",
 			},
-			args{"containerd-shim-slight-v1"},
+			args{"containerd-shim-wasmtime-v1"},
 			wants{
-				"/opt/rcm/bin/containerd-shim-slight-v1",
+				"/opt/rcm/bin/containerd-shim-wasmtime-v1",
 				true,
 			},
 			false,

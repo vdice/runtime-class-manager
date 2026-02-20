@@ -1,9 +1,6 @@
 ## Append samples of your project ##
 resources:
-- test_shim_lunatic.yaml
-- test_shim_slight.yaml
 - test_shim_spin.yaml
-- test_shim_wws.yaml
 - sample_shim_spin.yaml
 - sample_shim_wasmtime.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
