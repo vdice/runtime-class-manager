@@ -1,3 +1,5 @@
+# This shim was originally used for test automation, but was also referenced by the v0.1.0 Helm chart
+# It should be removed (deferring to 'sample_shim_spin.yaml') by 1.0.0 at the latest
 apiVersion: runtime.spinkube.dev/v1alpha1 
 kind: Shim
 metadata:
