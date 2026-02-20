@@ -91,10 +91,11 @@ spec:
                           type: string
                         location:
                           description: Location is the URL to the artifact archive
-                            for this platform.
+                            for this platform. Must be publicly accessible.
                           type: string
                         os:
-                          description: OS is the operating system.
+                          description: OS is the operating system. Currently only
+                            "Linux" is supported.
                           enum:
                           - linux
                           type: string
@@ -111,6 +112,7 @@ spec:
                   type:
                     description: |-
                       Type is the fetch strategy type.
+
                       Deprecated: this field is ignored by the controller and exists only
                       for backward compatibility with existing manifests that specify it.
                     type: string
