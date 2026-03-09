@@ -151,8 +151,9 @@ jobs:
             --set rcm.nodeInstallerImage.tag=chart-test \
             --set rcm.shimDownloaderImage.repository=shim-downloader \
             --set rcm.shimDownloaderImage.tag=chart-test \
-            --set rcm.shimDownloaderConfig.enabled=true \
             --set rcm.shimDownloaderConfig.configMapName=configmap-test \
+            --set rcm.shimDownloaderConfig.content.numRetry=5 \
+            --set rcm.shimDownloaderConfig.content.sleepDuration=3 \
             deploy/helm
 
       - name: apply Spin shim

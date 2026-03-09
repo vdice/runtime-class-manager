@@ -49,7 +49,7 @@ spec:
             value: "{{ .Values.rcm.nodeInstallerImage.repository }}:{{ .Values.rcm.nodeInstallerImage.tag | default .Chart.AppVersion }}"
           - name: SHIM_NODE_INSTALLER_JOB_TTL
             value: "{{ .Values.rcm.nodeInstallerJob.ttl | default 0 }}"
-          {{- if .Values.rcm.shimDownloaderConfig.enabled }}
+          {{- if .Values.rcm.shimDownloaderConfig }}
           - name: SHIM_DOWNLOADER_CONFIG_MAP
             value: "{{ .Values.rcm.shimDownloaderConfig.configMapName }}"
           {{- end }}
@@ -83,13 +83,13 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-{{- if .Values.rcm.shimDownloaderConfig.enabled }}
+{{- if .Values.rcm.shimDownloaderConfig }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Values.rcm.shimDownloaderConfig.configMapName }}
 data:
-  NUM_RETRY: "{{ .Values.rcm.shimDownloaderConfig.content.numRetry }}"
-  SLEEP_DURATION: "{{ .Values.rcm.shimDownloaderConfig.content.sleepDuration }}"
+  NUM_RETRY: "{{ .Values.rcm.shimDownloaderConfig.content.numRetry | default 3 }}"
+  SLEEP_DURATION: "{{ .Values.rcm.shimDownloaderConfig.content.sleepDuration | default 2 }}"
 {{- end }}
