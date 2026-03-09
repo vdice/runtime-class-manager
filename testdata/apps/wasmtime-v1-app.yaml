@@ -15,4 +15,4 @@ spec:
       runtimeClassName: wasmtime-v1
       containers:
       - name: wasmtime-v1-app
-        image: ghcr.io/containerd/runwasi/wasi-demo-app:latest
+        image: ghcr.io/containerd/runwasi/wasi-demo-app:0.2.0
