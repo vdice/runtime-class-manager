@@ -597,7 +597,7 @@ func (sr *ShimReconciler) handleDeployRuntimeClass(ctx context.Context, shim *rc
 	}
 	patchMethod := client.RawPatch(types.ApplyPatchType, runtimeClassData)
 	patchOptions := &client.PatchOptions{
-		Force:        ptr(true), // Force b/c any fields we are setting need to be owned by the spin-operator
+		Force:        ptr(true), // Force b/c any fields we are setting need to be owned by the shim-operator
 		FieldManager: "shim-operator",
 	}
 
