@@ -321,9 +321,13 @@ func (sr *ShimReconciler) deployJobOnNode(ctx context.Context, shim *rcmv1.Shim,
 	}
 
 	// We want to use server-side apply https://kubernetes.io/docs/reference/using-api/server-side-apply
-	patchMethod := client.Apply
+	jobData, err := json.Marshal(job)
+	if err != nil {
+		return fmt.Errorf("failed to marshal job: %w", err)
+	}
+	patchMethod := client.RawPatch(types.ApplyPatchType, jobData)
 	patchOptions := &client.PatchOptions{
-		Force:        ptr(true), // Force b/c any fields we are setting need to be owned by the spin-operator
+		Force:        ptr(true), // Force b/c any fields we are setting need to be owned by the shim-operator
 		FieldManager: "shim-operator",
 	}
 
@@ -587,7 +591,11 @@ func (sr *ShimReconciler) handleDeployRuntimeClass(ctx context.Context, shim *rc
 	}
 
 	// We want to use server-side apply https://kubernetes.io/docs/reference/using-api/server-side-apply
-	patchMethod := client.Apply
+	runtimeClassData, err := json.Marshal(runtimeClass)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to marshal runtimeclass: %w", err)
+	}
+	patchMethod := client.RawPatch(types.ApplyPatchType, runtimeClassData)
 	patchOptions := &client.PatchOptions{
 		Force:        ptr(true), // Force b/c any fields we are setting need to be owned by the spin-operator
 		FieldManager: "shim-operator",
