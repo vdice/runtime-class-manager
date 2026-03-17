@@ -96,21 +96,14 @@ func (c K3sRestarter) Restart() error {
 			return fmt.Errorf("unable to restart k3s: %w", err)
 		}
 	} else {
-		// TODO: this approach still leads to the behavior mentioned in https://github.com/spinframework/runtime-class-manager/issues/140:
-		// The first pod's provisioner container exits with code 255, leading to pod status Unknown,
-		// followed by the subsequent pod's provisioner container no-op-ing and finishing with status Completed.
-		pid, err := getPid("k3s")
+		// Assuming k3d; PID 1 is the main k3d entrypoint which should be restarted
+		// rather than the nested k3s process
+		out, err := nsenterCmd("kill", "1").CombinedOutput()
+		slog.Debug(string(out))
 		if err != nil {
-			return err
-		}
-		slog.Debug("found k3s process", "pid", pid)
-
-		err = syscall.Kill(pid, syscall.SIGHUP)
-		if err != nil {
-			return fmt.Errorf("failed to send SIGHUP to k3s: %w", err)
+			return fmt.Errorf("unable to restart k3s via TERM signal to PID 1: %w", err)
 		}
 	}
-
 	return nil
 }
 
