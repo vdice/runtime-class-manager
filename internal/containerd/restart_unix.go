@@ -20,6 +20,7 @@
 package containerd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -89,11 +90,23 @@ func (c K3sRestarter) Restart() error {
 	// This restarter will be used both for stock K3s distros, which use systemd as well as K3d, which does not.
 
 	// If listing systemd units succeeds, prefer systemctl restart; otherwise kill pid
-	if _, err := ListSystemdUnits(); err == nil {
-		out, err := nsenterCmd("systemctl", "restart", "k3s").CombinedOutput()
+	// First, collect systemd units to determine which k3s service to restart
+	if units, err := ListSystemdUnits(); err == nil {
+		var service string
+		// Prioritize k3s-agent (more common); otherwise k3s
+		switch {
+		case bytes.Contains(units, []byte("k3s-agent.service")):
+			service = "k3s-agent"
+		case bytes.Contains(units, []byte("k3s.service")):
+			service = "k3s"
+		default:
+			return fmt.Errorf("failed to find a registered k3s systemd service")
+		}
+
+		out, err := nsenterCmd("systemctl", "restart", service).CombinedOutput()
 		slog.Debug(string(out))
 		if err != nil {
-			return fmt.Errorf("unable to restart k3s: %w", err)
+			return fmt.Errorf("unable to restart the %s systemd service: %w", service, err)
 		}
 	} else {
 		// Assuming k3d; PID 1 is the main k3d entrypoint which should be restarted
